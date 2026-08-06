@@ -1,12 +1,12 @@
 ﻿import streamlit as st
 import sqlite3
 import pandas as pd
-from utils.ui import enable_select_all_inputs, translate_columns
+from utils.ui import enable_select_all_inputs, format_and_translate_columns, render_brand_header
 
 from utils.cache import load_products
 from utils.stock import save_movement
 
-st.title("📥 Entrada de Estoque")
+render_brand_header("📥 Entrada de Estoque")
 
 enable_select_all_inputs()
 
@@ -90,9 +90,12 @@ ORDER BY m.data_movimento DESC
 conn.close()
 
 st.dataframe(
-    translate_columns(df),
+    format_and_translate_columns(df),
     use_container_width=True
 )
+
+
+
 
 
 

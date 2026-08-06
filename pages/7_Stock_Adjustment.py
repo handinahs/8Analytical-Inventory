@@ -1,9 +1,9 @@
 ﻿import streamlit as st
 import sqlite3
 import pandas as pd
-from utils.ui import enable_select_all_inputs
+from utils.ui import enable_select_all_inputs, render_brand_header
 
-st.title("📦 Ajuste de Estoque")
+render_brand_header("📦 Ajuste de Estoque")
 
 enable_select_all_inputs()
 
@@ -129,6 +129,7 @@ if st.button("Ajustar Estoque"):
     )
 
 conn.close()
+
 
 
 

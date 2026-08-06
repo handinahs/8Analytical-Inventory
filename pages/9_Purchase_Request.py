@@ -8,9 +8,9 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from utils.ui import enable_select_all_inputs, translate_columns
+from utils.ui import enable_select_all_inputs, translate_columns, render_brand_header
 
-st.title("🧾 Requisição de Compras")
+render_brand_header("🧾 Requisição de Compras")
 
 enable_select_all_inputs()
 
@@ -246,6 +246,7 @@ else:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True,
         )
+
 
 
 

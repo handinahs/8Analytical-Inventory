@@ -3,8 +3,9 @@ from pathlib import Path
 import shutil
 
 import streamlit as st
+from utils.ui import render_brand_header
 
-st.title("💾 Backup do Banco")
+render_brand_header("💾 Backup do Banco")
 
 DB_PATH = Path("estoque.db")
 BACKUP_DIR = Path("backups")
@@ -90,3 +91,4 @@ else:
         use_container_width=True,
         hide_index=True,
     )
+

@@ -1,14 +1,12 @@
 ﻿import streamlit as st
-from utils.ui import enable_select_all_inputs, translate_columns
+from utils.ui import enable_select_all_inputs, format_and_translate_columns, format_date_value, render_brand_header
 
 from utils.movements import (
     get_all_movements,
     cancel_movement
 )
 
-st.set_page_config(layout="wide")
-
-st.title("📋 Todas as Movimentações")
+render_brand_header("📋 Todas as Movimentações")
 
 enable_select_all_inputs()
 
@@ -64,8 +62,13 @@ df["Status"] = df["Status"].map({
 display_df = df.drop(columns=["id", "Status_Code"]).copy()
 display_df["Type"] = display_df["Type"].map(movement_type_label).fillna(display_df["Type"])
 
+display_df = display_df.rename(columns={
+    "Cancellation_Reason": "Motivo do Cancelamento",
+    "Cancellation_Date": "Data do Cancelamento",
+})
+
 st.data_editor(
-    translate_columns(display_df),
+    format_and_translate_columns(display_df),
     use_container_width=True,
     hide_index=True,
     disabled=True
@@ -86,7 +89,7 @@ if len(df) > 0:
     for _, row in df.iterrows():
 
         label = (
-            f"{row['Date']} | "
+            f"{format_date_value(row['Date'])} | "
             f"{movement_type_label.get(row['Type'], row['Type'])} | "
             f"{row['Product']} | "
             f"Qtd: {row['Quantity']}"
@@ -108,7 +111,7 @@ if len(df) > 0:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.write(f"**Data:** {movement['Date']}")
+        st.write(f"**Data:** {format_date_value(movement['Date'])}")
         st.write(f"**Código:** {movement['Code']}")
         st.write(f"**Produto:** {movement['Product']}")
         st.write(f"**Tipo:** {movement_type_label.get(movement['Type'], movement['Type'])}")
@@ -118,23 +121,46 @@ if len(df) > 0:
         st.write(f"**Observação:** {movement['Observation']}")
         st.write(f"**Status:** {movement['Status']}")
 
+        if movement["Status_Code"] == 0:
+            st.write(f"**Motivo do Cancelamento:** {movement['Cancellation_Reason'] or '-'}")
+            st.write(f"**Data do Cancelamento:** {format_date_value(movement['Cancellation_Date']) or '-'}")
+
     st.divider()
 
     if movement["Status_Code"] == 1:
 
+        st.subheader("Cancelar Movimentação")
+
+        cancellation_reason = st.text_area(
+            "Motivo do cancelamento",
+            placeholder="Explique por que esta movimentação está sendo cancelada."
+        )
+
+        confirm_cancel = st.checkbox(
+            "Confirmo que desejo cancelar esta movimentação."
+        )
+
+        can_cancel = cancellation_reason.strip() and confirm_cancel
+
+        if not can_cancel:
+            st.info("Preencha o motivo e marque a confirmação para liberar o cancelamento.")
+
         if st.button(
             "❌ Cancelar Movimentação",
             type="primary",
-            use_container_width=True
+            use_container_width=True,
+            disabled=not can_cancel,
         ):
 
-            cancel_movement(movement_id)
+            rows_updated = cancel_movement(movement_id, cancellation_reason)
 
-            st.success(
-                "Movimentação cancelada com sucesso!"
-            )
-
-            st.rerun()
+            if rows_updated:
+                st.success(
+                    "Movimentação cancelada com sucesso!"
+                )
+                st.rerun()
+            else:
+                st.warning("Esta movimentação já estava cancelada ou não foi encontrada.")
 
     else:
 
@@ -143,3 +169,5 @@ if len(df) > 0:
 else:
 
     st.warning("Nenhuma movimentação encontrada.")
+
+

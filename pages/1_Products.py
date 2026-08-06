@@ -1,9 +1,9 @@
 ﻿import streamlit as st
 import sqlite3
 import pandas as pd
-from utils.ui import enable_select_all_inputs, translate_columns
+from utils.ui import enable_select_all_inputs, translate_columns, render_brand_header
 
-st.title("📦 Produtos")
+render_brand_header("📦 Produtos")
 
 enable_select_all_inputs()
 
@@ -33,6 +33,30 @@ def save_product(codigo, descricao, unidade, posicao, qtd_inicial):
         st.error("Este código de produto já existe!")
 
     conn.close()
+
+
+def update_product_info(codigo, descricao, unidade, posicao):
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE produtos
+        SET
+            descricao = ?,
+            unidade = ?,
+            posicao = ?
+        WHERE codigo = ?
+    """, (
+        descricao.strip(),
+        unidade.strip(),
+        posicao.strip().upper(),
+        codigo,
+    ))
+
+    conn.commit()
+    conn.close()
+    st.cache_data.clear()
 
 
 def set_product_status(codigo, ativo):
@@ -142,6 +166,70 @@ df = load_products(search=search, ativo=1)
 st.dataframe(translate_columns(df), use_container_width=True, hide_index=True)
 
 # -----------------
+# EDIT PRODUCT
+# -----------------
+
+st.divider()
+
+st.header("Editar Produto")
+
+if df.empty:
+    st.info("Nenhum produto ativo encontrado para editar.")
+else:
+    edit_options = {
+        f"{row['Code']} - {row['Descrição']}": row
+        for _, row in df.iterrows()
+    }
+
+    selected_edit = st.selectbox(
+        "Produto para Editar",
+        list(edit_options.keys())
+    )
+
+    product_to_edit = edit_options[selected_edit]
+
+    with st.form("edit_product_form"):
+        st.text_input(
+            "Código do Produto",
+            value=product_to_edit["Code"],
+            disabled=True
+        )
+
+        edited_description = st.text_input(
+            "Descrição",
+            value=product_to_edit["Descrição"] or ""
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            edited_unit = st.text_input(
+                "Unidade",
+                value=product_to_edit["Unidade"] or ""
+            )
+
+        with col2:
+            edited_location = st.text_input(
+                "Posição",
+                value=product_to_edit["Posição"] or ""
+            )
+
+        submitted_edit = st.form_submit_button("Salvar Alterações")
+
+        if submitted_edit:
+            if not edited_description.strip():
+                st.warning("A descrição não pode ficar vazia.")
+            else:
+                update_product_info(
+                    product_to_edit["Code"],
+                    edited_description,
+                    edited_unit,
+                    edited_location,
+                )
+                st.success("Produto atualizado com sucesso!")
+                st.rerun()
+
+# -----------------
 # DEACTIVATE PRODUCT
 # -----------------
 
@@ -200,5 +288,4 @@ else:
         set_product_status(inactive_options[selected_inactive], 1)
         st.success("Produto reativado com sucesso!")
         st.rerun()
-
 

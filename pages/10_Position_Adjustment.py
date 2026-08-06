@@ -3,9 +3,9 @@
 import pandas as pd
 import streamlit as st
 
-from utils.ui import enable_select_all_inputs, translate_columns
+from utils.ui import enable_select_all_inputs, translate_columns, render_brand_header
 
-st.title("📍 Ajuste de Posição")
+render_brand_header("📍 Ajuste de Posição")
 
 enable_select_all_inputs()
 
@@ -135,3 +135,4 @@ else:
         use_container_width=True,
         hide_index=True,
     )
+

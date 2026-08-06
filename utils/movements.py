@@ -15,7 +15,9 @@ def get_all_movements(movement_type="ALL", search=""):
         m.tipo AS Type,
         m.quantidade AS Quantity,
         m.status AS Status,
-        m.observacao AS Observation
+        m.observacao AS Observation,
+        m.motivo_cancelamento AS Cancellation_Reason,
+        m.data_cancelamento AS Cancellation_Date
 
     FROM movimentacoes m
 
@@ -25,42 +27,52 @@ def get_all_movements(movement_type="ALL", search=""):
     WHERE 1 = 1
     """
 
+    params = []
+
     if movement_type != "ALL":
-        query += f"""
-        AND m.tipo = '{movement_type}'
+        query += """
+        AND m.tipo = ?
         """
+        params.append(movement_type)
 
     if search:
-        query += f"""
+        query += """
         AND (
-            p.codigo LIKE '%{search}%'
-            OR p.descricao LIKE '%{search}%'
+            p.codigo LIKE ?
+            OR p.descricao LIKE ?
         )
         """
+        params.extend([f"%{search}%", f"%{search}%"])
 
     query += """
     ORDER BY m.data_movimento DESC
     """
 
-    df = pd.read_sql(query, conn)
+    df = pd.read_sql(query, conn, params=params)
 
     conn.close()
 
     return df
 
 
-def cancel_movement(movement_id):
+def cancel_movement(movement_id, cancellation_reason):
 
     conn = sqlite3.connect("estoque.db")
     cursor = conn.cursor()
 
     cursor.execute("""
         UPDATE movimentacoes
-        SET status = 0
+        SET
+            status = 0,
+            motivo_cancelamento = ?,
+            data_cancelamento = CURRENT_TIMESTAMP
         WHERE id = ?
         AND status = 1
-    """, (movement_id,))
+    """, (cancellation_reason.strip(), movement_id))
+
+    rows_updated = cursor.rowcount
 
     conn.commit()
     conn.close()
 
+    return rows_updated

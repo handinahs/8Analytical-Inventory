@@ -1,8 +1,9 @@
 ﻿import streamlit as st
+from utils.ui import render_brand_header
 import pandas as pd
 import sqlite3
 
-st.title("📥 Importar Produtos")
+render_brand_header("📥 Importar Produtos")
 
 uploaded_file = st.file_uploader(
     "Selecionar Arquivo Excel",
@@ -80,4 +81,5 @@ if uploaded_file:
 
     except Exception as e:
         st.error(e)
+
 
